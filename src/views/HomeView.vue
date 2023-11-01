@@ -43,11 +43,12 @@ async function generateCodeChallenge(codeVerifier: string) {
 <template>
     <div class="container">
         <header>
-            <h1>Display Spotify Profile</h1>
+            <h1>Playlist Splitter</h1>
+            <span>split your spotify playlists!</span>
         </header>
 
         <main>
-            <button @click="redirectToAuthCodeFlow">Authenticate with spotify</button>
+            <button @click="redirectToAuthCodeFlow">Authenticate</button>
         </main>
     </div>
 </template>
@@ -56,19 +57,65 @@ async function generateCodeChallenge(codeVerifier: string) {
 .container {
     display: grid;
     grid-template-columns: 1fr;
-    grid-template-rows: min-content auto;
+    grid-template-rows: 1fr 2fr;
     grid-template-areas:
         "header"
         "main";
-    row-gap: 1rem;
     height: 100vh;
+    width: 100vw;
+    justify-items: center;
 }
 
 header {
     grid-area: header;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+h1 {
+    font-size: 3rem;
+}
+
+span {
+    font-size: 1.5rem;
 }
 
 main {
     grid-area: main
+}
+
+button {
+    background-color: #1db954;
+    color: "black";
+    border-radius: 500px;
+    padding: 14px 32px;
+    display: flex;
+    -moz-box-align: center;
+    align-items: center;
+    -moz-box-pack: center;
+    justify-content: center;
+    font-family: spotify-circular, Helvetica, Arial, sans-serif;
+    font-size: 18px;
+    line-height: 24px;
+    font-weight: 700;
+    text-align: center;
+    text-transform: none;
+    border: none;
+}
+
+button:hover {
+    transform: scale(1.05);
+}
+
+@media (min-width:961px) {
+    .container {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr;
+        grid-template-areas:
+            "header main";
+        align-items: center;
+    }
 }
 </style>
