@@ -6,51 +6,13 @@ import mockPlaylistData from "@/views/mockPlaylist.json";
 const clientId = "a69b0d8ab6b74d1598fd9e08c9741d7d"; // Replace with your client id
 const route = useRoute()
 const { code } = route.query
-const userData = ref({
-    id: "",
-    email: "",
-    uri: "",
-    externalUri: "",
-    link: "",
-    imgUrl: "",
-    displayName: ""
-})
-console.log(mockPlaylistData)
-const mockProfile = {
-    "display_name": "izueneh21",
-    "external_urls": {
-        "spotify": "https://open.spotify.com/user/izueneh21"
-    },
-    "href": "https://api.spotify.com/v1/users/izueneh21",
-    "id": "izueneh21",
-    "images": [],
-    "type": "user",
-    "uri": "spotify:user:izueneh21",
-    "followers": {
-        "href": null,
-        "total": 7
-    },
-    "country": "CA",
-    "product": "premium",
-    "explicit_content": {
-        "filter_enabled": false,
-        "filter_locked": false
-    },
-    "email": "izueneh21@gmail.com"
-}
+const playlists = ref(mockPlaylistData.items)
 
 getAccessToken(clientId, code as string)
     .then(accessToken => {
-        getPlaylists("izueneh21", accessToken).then(playlists => console.log(playlists))
-        return fetchProfile(accessToken)
+        return getPlaylists("izueneh21", accessToken)
     })
-    .then(profile => {
-        if (profile.error) {
-            populateUI(mockProfile)
-        } else {
-            populateUI(profile)
-        }
-    })
+    .then(playlists => console.log(playlists))
 
 
 async function getAccessToken(clientId: string, code: string): Promise<string> {
@@ -86,50 +48,23 @@ async function getPlaylists(id: any, code: string): Promise<string> {
     return playlists;
 }
 
-async function fetchProfile(token: string): Promise<any> {
-    const result = await fetch("https://api.spotify.com/v1/me", {
-        method: "GET", headers: { Authorization: `Bearer ${token}` }
-    });
-
-    return await result.json();
-}
-
-function populateUI(profile: any) {
-    userData.value.displayName = profile.display_name;
-    // if (profile.images[0]) {
-    //   const profileImage = new Image(200, 200);
-    //   profileImage.src = profile.images[0].url;
-    //   document.getElementById("avatar")!.appendChild(profileImage);
-    // }
-
-    userData.value.id = profile.id;
-    userData.value.email = profile.email;
-    userData.value.uri = profile.uri;
-    userData.value.externalUri = profile.external_urls.spotify
-    userData.value.link = profile.href
-    userData.value.imgUrl = profile.images[0]?.url ?? '(no profile image)';
-}
 </script>
 
 <template>
     <div class="container">
         <header>
-            <h1>Display Spotify Profile</h1>
+            <h1>Pick a playlist</h1>
         </header>
 
         <main>
-            <p>This is the spotify app</p>
-            <section id="profile">
-                <h2>Logged in as {{ userData.displayName }}</h2>
-                <span id="avatar"></span>
-                <ul>
-                    <li>User ID: {{ userData.id }}</li>
-                    <li>Email: {{ userData.email }}</li>
-                    <li>Spotify URI: <a id="uri" :href="userData.externalUri">{{ userData.uri }}</a></li>
-                    <li>Link: <a id="url" :href="userData.link">{{ userData.link }}</a></li>
-                    <li>Profile Image: {{ userData.imgUrl }}</li>
-                </ul>
-            </section>
+            <ul class="playlist-list">
+                <li v-for="playlist in playlists" :key="playlist.id">
+                    <div class="playlist-item">
+                        <img :src="playlist.images[0].url" />
+                        <span>{{ playlist.name }}</span>
+                    </div>
+                </li>
+            </ul>
         </main>
     </div>
 </template>
@@ -138,12 +73,13 @@ function populateUI(profile: any) {
 .container {
     display: grid;
     grid-template-columns: 1fr;
-    grid-template-rows: min-content auto;
+    grid-template-rows: 1fr auto;
     grid-template-areas:
         "header"
         "main";
     row-gap: 1rem;
     height: 100vh;
+    padding: 0px 16px 32px;
 }
 
 header {
@@ -152,5 +88,34 @@ header {
 
 main {
     grid-area: main
+}
+
+.playlist-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    list-style-type: none;
+    padding: 0px;
+}
+
+.playlist-item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+    border: solid white;
+    border-width: 1px 0px;
+    padding: 8px 0px;
+}
+
+.playlist-item:hover {
+    transform: scale(1.05);
+    cursor: pointer;
+    background-color: rgb(43, 43, 43);
+}
+
+.playlist-item img {
+    width: 50px;
+    height: auto;
 }
 </style>
