@@ -1,16 +1,18 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import mockPlaylistData from "@/views/mockPlaylist.json";
 
-const clientId = "a69b0d8ab6b74d1598fd9e08c9741d7d"; // Replace with your client id
+const clientId = "a69b0d8ab6b74d1598fd9e08c9741d7d";
 const route = useRoute()
+const router = useRouter()
 const { code } = route.query
 const playlists = ref(mockPlaylistData.items)
 
 getAccessToken(clientId, code as string)
     .then(accessToken => {
-        return getPlaylists("izueneh21", accessToken)
+        localStorage.setItem("access_token", accessToken)
+        return getPlaylists("izueneh21")
     })
     .then(playlists => console.log(playlists))
 
@@ -35,19 +37,22 @@ async function getAccessToken(clientId: string, code: string): Promise<string> {
     return access_token;
 }
 
-async function getPlaylists(id: any, code: string): Promise<string> {
+async function getPlaylists(id: any): Promise<string> {
+    const accessToken = localStorage.getItem("access_token")
 
     const result = await fetch(`https://api.spotify.com/v1/users/${id}/playlists`, {
         method: "GET",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${code}` },
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${accessToken}` },
 
     });
 
     const { playlists } = await result.json();
-    console.log(playlists)
     return playlists;
 }
 
+function viewPlaylist(id: string) {
+    router.push(`/playlist/${id}`)
+}
 </script>
 
 <template>
@@ -58,7 +63,7 @@ async function getPlaylists(id: any, code: string): Promise<string> {
 
         <main>
             <ul class="playlist-list">
-                <li v-for="playlist in playlists" :key="playlist.id">
+                <li v-for="playlist in playlists" :key="playlist.id" @click="viewPlaylist(playlist.id)">
                     <div class="playlist-item">
                         <img :src="playlist.images[0].url" />
                         <span>{{ playlist.name }}</span>
