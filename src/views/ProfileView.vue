@@ -1,23 +1,29 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import mockPlaylistData from "@/views/mockPlaylist.json";
 
 const clientId = "a69b0d8ab6b74d1598fd9e08c9741d7d";
 const route = useRoute()
 const router = useRouter()
 const { code } = route.query
-const playlists = ref(mockPlaylistData.items)
+const playlists = ref<Array<any>>([])
+const cachedCode = localStorage.getItem("access_code")
+const loading = ref(true)
 
-getAccessToken(clientId, code as string)
-    .then(accessToken => {
-        localStorage.setItem("access_token", accessToken)
-        return getPlaylists("izueneh21")
+if (code != cachedCode) {
+    getAccessToken(clientId, code as string).then(() => {
+        loading.value = false
     })
-    .then(playlists => console.log(playlists))
+} else {
+    console.log("accessToken is available")
+    loading.value = false
+}
 
+if (!loading.value && playlists.value.length == 0) {
+    getPlaylists("izueneh21")
+}
 
-async function getAccessToken(clientId: string, code: string): Promise<string> {
+async function getAccessToken(clientId: string, code: string) {
     const verifier = localStorage.getItem("verifier");
 
     const params = new URLSearchParams();
@@ -32,12 +38,14 @@ async function getAccessToken(clientId: string, code: string): Promise<string> {
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: params
     });
+    console.log(result)
 
     const { access_token } = await result.json();
-    return access_token;
+    localStorage.setItem("access_token", access_token)
+    localStorage.setItem("access_code", code)
 }
 
-async function getPlaylists(id: any): Promise<string> {
+async function getPlaylists(id: any) {
     const accessToken = localStorage.getItem("access_token")
 
     const result = await fetch(`https://api.spotify.com/v1/users/${id}/playlists`, {
@@ -46,8 +54,8 @@ async function getPlaylists(id: any): Promise<string> {
 
     });
 
-    const { playlists } = await result.json();
-    return playlists;
+    const response = await result.json();
+    playlists.value = response.items
 }
 
 function viewPlaylist(id: string) {
