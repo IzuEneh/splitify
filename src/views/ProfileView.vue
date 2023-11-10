@@ -8,18 +8,16 @@ const router = useRouter()
 const { code } = route.query
 const playlists = ref<Array<any>>([])
 const cachedCode = localStorage.getItem("access_code")
-const loading = ref(true)
+const isLoading = ref(true)
+const errorMessage = ref("")
 
 if (code != cachedCode) {
-    getAccessToken(clientId, code as string).then(() => {
-        loading.value = false
-    })
+    getAccessToken(clientId, code as string)
 } else {
-    console.log("accessToken is available")
-    loading.value = false
+    isLoading.value = false
 }
 
-if (!loading.value && playlists.value.length == 0) {
+if (!isLoading.value && playlists.value.length == 0) {
     getPlaylists("izueneh21")
 }
 
@@ -33,34 +31,44 @@ async function getAccessToken(clientId: string, code: string) {
     params.append("redirect_uri", "http://localhost:5173/callback");
     params.append("code_verifier", verifier!);
 
-    const result = await fetch("https://accounts.spotify.com/api/token", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: params
-    });
-    console.log(result)
+    try {
+        const result = await fetch("https://accounts.spotify.com/api/token", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: params
+        });
 
-    const { access_token } = await result.json();
-    localStorage.setItem("access_token", access_token)
-    localStorage.setItem("access_code", code)
+        const { access_token, refresh_token, expires_in } = await result.json();
+        localStorage.setItem("access_token", access_token)
+        localStorage.setItem("access_code", code)
+        localStorage.setItem("refresh_token", refresh_token)
+        localStorage.setItem("expires_in", expires_in)
+    } catch (error) {
+        errorMessage.value = `An error occcured getting access token: ${error}`
+    } finally {
+        isLoading.value = false
+    }
 }
 
 async function getPlaylists(id: any) {
     const accessToken = localStorage.getItem("access_token")
+    isLoading.value = true
 
-    const result = await fetch(`https://api.spotify.com/v1/users/${id}/playlists`, {
-        method: "GET",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${accessToken}` },
+    try {
+        const result = await fetch(`https://api.spotify.com/v1/users/${id}/playlists`, {
+            method: "GET",
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${accessToken}` },
+        });
 
-    });
-
-    const response = await result.json();
-    playlists.value = response.items
+        const response = await result.json();
+        playlists.value = response.items
+    } catch (error) {
+        errorMessage.value = `An error occcured getting access token: ${error}`
+    } finally {
+        isLoading.value = false
+    }
 }
 
-function viewPlaylist(id: string) {
-    router.push(`/playlist/${id}`)
-}
 </script>
 
 <template>
@@ -70,8 +78,10 @@ function viewPlaylist(id: string) {
         </header>
 
         <main>
-            <ul class="playlist-list">
-                <li v-for="playlist in playlists" :key="playlist.id" @click="viewPlaylist(playlist.id)">
+            <div v-if="isLoading">Loading...</div>
+            <p v-else-if="errorMessage.length > 0">{{ errorMessage }}</p>
+            <ul v-else class="playlist-list">
+                <li v-for="playlist in playlists" :key="playlist.id" @click="router.push(`/playlist/${playlist.id}`)">
                     <div class="playlist-item">
                         <img :src="playlist.images[0].url" />
                         <span>{{ playlist.name }}</span>
