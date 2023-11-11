@@ -88,7 +88,7 @@ main {
 
 button {
     background-color: #1db954;
-    color: "black";
+    color: black;
     border-radius: 500px;
     padding: 14px 32px;
     display: flex;
