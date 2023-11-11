@@ -2,7 +2,6 @@
 import { ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
-const clientId = "a69b0d8ab6b74d1598fd9e08c9741d7d";
 const route = useRoute()
 const router = useRouter()
 const { code } = route.query
@@ -12,7 +11,7 @@ const isLoading = ref(true)
 const errorMessage = ref("")
 
 if (code != cachedCode) {
-    getAccessToken(clientId, code as string)
+    getAccessToken(code as string)
 } else {
     isLoading.value = false
 }
@@ -21,11 +20,11 @@ if (!isLoading.value && playlists.value.length == 0) {
     getPlaylists("izueneh21")
 }
 
-async function getAccessToken(clientId: string, code: string) {
+async function getAccessToken(code: string) {
     const verifier = localStorage.getItem("verifier");
 
     const params = new URLSearchParams();
-    params.append("client_id", clientId);
+    params.append("client_id", import.meta.env.VITE_CLIENT_ID);
     params.append("grant_type", "authorization_code");
     params.append("code", code);
     params.append("redirect_uri", "http://localhost:5173/callback");

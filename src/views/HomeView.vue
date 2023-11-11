@@ -1,7 +1,5 @@
 <script setup lang="ts">
 
-const clientId = "a69b0d8ab6b74d1598fd9e08c9741d7d";
-
 async function redirectToAuthCodeFlow() {
     const verifier = generateCodeVerifier(128);
     const challenge = await generateCodeChallenge(verifier);
@@ -9,7 +7,7 @@ async function redirectToAuthCodeFlow() {
     localStorage.setItem("verifier", verifier);
 
     const params = new URLSearchParams();
-    params.append("client_id", clientId);
+    params.append("client_id", import.meta.env.VITE_CLIENT_ID);
     params.append("response_type", "code");
     params.append("redirect_uri", "http://localhost:5173/callback");
     params.append("scope", "user-read-private user-read-email playlist-read-private playlist-read-collaborative");
