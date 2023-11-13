@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PlaylistList from '@/components/PlaylistList.vue';
 import { ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
@@ -72,72 +73,39 @@ async function getPlaylists(id: any) {
 
 <template>
     <div class="container">
-        <header>
-            <h1>Pick a playlist</h1>
-        </header>
-
-        <main>
-            <div v-if="isLoading">Loading...</div>
-            <p v-else-if="errorMessage.length > 0">{{ errorMessage }}</p>
-            <ul v-else class="playlist-list">
-                <li v-for="playlist in playlists" :key="playlist.id" @click="router.push(`/playlist/${playlist.id}`)">
-                    <div class="playlist-item">
-                        <img :src="playlist.images[0].url" />
-                        <span>{{ playlist.name }}</span>
-                    </div>
-                </li>
-            </ul>
-        </main>
+        <section class="content-area">
+            <span>Your Playlists</span>
+            <div>
+                <PlaylistList :playlists="playlists" />
+            </div>
+        </section>
     </div>
 </template>
 
 <style scoped>
 .container {
-    display: grid;
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr auto;
-    grid-template-areas:
-        "header"
-        "main";
-    row-gap: 1rem;
+    display: flex;
+    gap: 1rem;
+    padding: 16px;
     height: 100vh;
-    padding: 0px 16px 32px;
+    width: 100vw;
 }
 
-header {
-    grid-area: header;
-}
-
-main {
-    grid-area: main
-}
-
-.playlist-list {
+.content-area {
+    background-color: var(--color-background-soft);
+    border-radius: 10px;
+    width: 25vw;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    list-style-type: none;
-    padding: 0px;
+    padding: 16px;
 }
 
-.playlist-item {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 16px;
-    border: solid white;
-    border-width: 1px 0px;
-    padding: 8px 0px;
+.content-area span {
+    font-size: large;
+    font-weight: 500;
 }
 
-.playlist-item:hover {
-    transform: scale(1.05);
-    cursor: pointer;
-    background-color: rgb(43, 43, 43);
-}
-
-.playlist-item img {
-    width: 50px;
-    height: auto;
+.content-area div {
+    overflow-y: scroll;
 }
 </style>
