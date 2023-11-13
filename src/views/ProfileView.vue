@@ -95,8 +95,8 @@ const handleSelectPlaylist = (id: string) => selectedID.value = id
 <template>
     <div class="container">
         <section class="content-area">
-            <span>Your Playlists</span>
-            <div>
+            <span class="playlist-title">Your Playlists</span>
+            <div class="scrollable">
                 <PlaylistList :playlists="playlists" :selected="selectedID" @on-select-playlist="handleSelectPlaylist" />
             </div>
         </section>
@@ -129,12 +129,12 @@ const handleSelectPlaylist = (id: string) => selectedID.value = id
     flex: 1
 }
 
-.content-area span {
+.playlist-title {
     font-size: large;
     font-weight: 500;
 }
 
-.content-area div {
+.scrollable {
     overflow-y: scroll;
 }
 </style>

@@ -5,15 +5,15 @@ import format from 'date-fns/format'
 const { playlist } = defineProps<{ playlist: PlaylistResponse | null }>()
 const table_headers = [
     { title: "#", value: "id" },
-    { title: "title", value: "track.name" },
-    { title: "album", value: "track.album.name" },
+    { title: "Title", value: "track.name" },
+    { title: "Album", value: "track.album.name" },
     {
-        title: "date added",
+        title: "Date added",
         key: "date",
         value: (item: Track) => format(new Date(item.added_at), "MMM d, yyy")
     },
     {
-        title: "length",
+        title: "Length",
         key: "length",
         value: (item: Track) => format(new Date(item.track.duration_ms), "m:ss")
     }
@@ -52,16 +52,25 @@ function splitTracks() {
             </div>
         </div>
 
-        <div class="main">
+        <div class="main scroll-section">
             <!-- section containing action buttons [split, save all?, share?] -->
             <section>
                 <button @click="splitTracks">Split</button>
             </section>
-            <section>
+            <div class="scroll-section">
                 <!-- initially contain original list after split display new playlists -->
-                <v-data-table :headers="table_headers" :items="playlist?.tracks.items">
-                </v-data-table>
-            </section>
+                <v-data-table-virtual :headers="table_headers" :items="playlist?.tracks.items" class="table">
+                    <template v-slot:headers="{ columns }">
+                        <tr>
+                            <template v-for="column in columns" :key="column.key">
+                                <td>
+                                    <span>{{ column.title }}</span>
+                                </td>
+                            </template>
+                        </tr>
+                    </template>
+                </v-data-table-virtual>
+            </div>
         </div>
     </div>
 </template>
@@ -72,6 +81,7 @@ function splitTracks() {
     flex-direction: column;
     width: 100%;
     padding: 0px 16px;
+    overflow: hidden;
 }
 
 .header {
@@ -122,5 +132,18 @@ button {
     text-align: center;
     text-transform: none;
     border: none;
+}
+
+.scroll-section {
+    overflow-y: scroll;
+}
+
+.table {
+    color: white;
+    background-color: transparent;
+}
+
+.table th span {
+    color: white
 }
 </style>
