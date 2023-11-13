@@ -1,15 +1,19 @@
 <script setup lang="ts">
-import PlaylistList from '@/components/PlaylistList.vue';
+import type { Playlist, PlaylistResponse } from '@/types';
 import { ref } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
+import PlaylistList from '@/components/PlaylistList.vue';
+import PlaylistView from '@/components/PlaylistView.vue';
+import { watch } from 'vue';
 
 const route = useRoute()
-const router = useRouter()
 const { code } = route.query
-const playlists = ref<Array<any>>([])
+const playlists = ref<Playlist[]>([])
 const cachedCode = localStorage.getItem("access_code")
 const isLoading = ref(true)
 const errorMessage = ref("")
+const selectedID = ref("")
+const selectedPlaylist = ref<PlaylistResponse | null>(null)
 
 if (code != cachedCode) {
     getAccessToken(code as string)
@@ -20,6 +24,8 @@ if (code != cachedCode) {
 if (!isLoading.value && playlists.value.length == 0) {
     getPlaylists("izueneh21")
 }
+
+watch(selectedID, () => getPlaylist(selectedID.value))
 
 async function getAccessToken(code: string) {
     const verifier = localStorage.getItem("verifier");
@@ -62,12 +68,27 @@ async function getPlaylists(id: any) {
 
         const response = await result.json();
         playlists.value = response.items
+        selectedID.value = playlists.value[0].id
     } catch (error) {
         errorMessage.value = `An error occcured getting access token: ${error}`
     } finally {
         isLoading.value = false
     }
 }
+
+async function getPlaylist(id: string) {
+    const accessToken = localStorage.getItem("access_token")
+    const result = await fetch(`https://api.spotify.com/v1/playlists/${id}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${accessToken}` },
+    });
+
+    const res = await result.json();
+    selectedPlaylist.value = res
+    selectedPlaylist.value!.tracks.items = selectedPlaylist.value!.tracks.items.map((item, index) => ({ id: index + 1, ...item }))
+}
+
+const handleSelectPlaylist = (id: string) => selectedID.value = id
 
 </script>
 
@@ -76,8 +97,12 @@ async function getPlaylists(id: any) {
         <section class="content-area">
             <span>Your Playlists</span>
             <div>
-                <PlaylistList :playlists="playlists" />
+                <PlaylistList :playlists="playlists" :selected="selectedID" @on-select-playlist="handleSelectPlaylist" />
             </div>
+        </section>
+
+        <section class="content-area grow">
+            <PlaylistView :playlist="selectedPlaylist" />
         </section>
     </div>
 </template>
@@ -98,6 +123,10 @@ async function getPlaylists(id: any) {
     display: flex;
     flex-direction: column;
     padding: 16px;
+}
+
+.grow {
+    flex: 1
 }
 
 .content-area span {

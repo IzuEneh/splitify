@@ -2,17 +2,17 @@
 import type { Playlist } from '@/types';
 import { ref } from 'vue';
 
-const { playlists } = defineProps<{
-    playlists: Playlist[]
+const { playlists, selected } = defineProps<{
+    playlists: Playlist[],
+    selected: string
 }>()
 
-const selectedID = ref("")
 </script>
 
 <template>
     <ul class="playlist-list">
-        <li v-for="playlist in playlists" :key="playlist.id" @click="selectedID = playlist.id">
-            <div class="playlist-item" :class="{ 'selected': playlist.id === selectedID }">
+        <li v-for="playlist in playlists" :key="playlist.id" @click="$emit('onSelectPlaylist', playlist.id)">
+            <div class="playlist-item" :class="{ 'selected': playlist.id === selected }">
                 <img :src="playlist.images[0].url" />
                 <div>
                     <span>{{ playlist.name }}</span>
