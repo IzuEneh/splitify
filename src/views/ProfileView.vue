@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Playlist, PlaylistResponse } from '@/types';
+import type { Playlist, PlaylistResponse, Track } from '@/types';
 import { ref } from 'vue';
 import { useRoute } from 'vue-router';
 import PlaylistList from '@/components/PlaylistList.vue';
@@ -14,6 +14,7 @@ const isLoading = ref(true)
 const errorMessage = ref("")
 const selectedID = ref("")
 const selectedPlaylist = ref<PlaylistResponse | null>(null)
+const newPlaylists = ref<any[]>([])
 
 if (code != cachedCode) {
     getAccessToken(code as string)
@@ -90,6 +91,39 @@ async function getPlaylist(id: string) {
 
 const handleSelectPlaylist = (id: string) => selectedID.value = id
 
+const createNewPlaylist = (id: string, name: string, tracks: Track[]) => ({
+    images: [{ url: "https://source.unsplash.com/random/60×60/?music", height: 60, with: 60 }],
+    name: name,
+    owner: {
+        display_name: "current user"
+    },
+    tracks: {
+        items: tracks
+    }
+})
+
+const handleSplitPlaylist = () => {
+    const hour_in_ms = 1000 * 60 * 60
+    let time = 0
+    let upodatedPlaylists: any[] = []
+    let buffer: Track[] = []
+    selectedPlaylist.value?.tracks.items.forEach(track => {
+        if (time < hour_in_ms) {
+            time += track.track["duration_ms"]
+            buffer.push(track)
+        } else {
+            upodatedPlaylists.push(createNewPlaylist(`${upodatedPlaylists.length}`, `Playlist ${upodatedPlaylists.length + 1}`, [...buffer]))
+            time = track.track["duration_ms"]
+            buffer = [track]
+        }
+    });
+
+    if (buffer.length != 0) {
+        upodatedPlaylists.push(createNewPlaylist(`${upodatedPlaylists.length}`, `Playlist ${upodatedPlaylists.length + 1}`, [...buffer]))
+    }
+
+    newPlaylists.value = upodatedPlaylists
+}
 </script>
 
 <template>
@@ -102,7 +136,14 @@ const handleSelectPlaylist = (id: string) => selectedID.value = id
         </section>
 
         <section class="content-area grow">
-            <PlaylistView :playlist="selectedPlaylist" />
+            <PlaylistView :playlist="selectedPlaylist" @on-split-playlist="handleSplitPlaylist" />
+        </section>
+
+        <section class="content-area" v-if="newPlaylists.length > 0">
+            <span class="playlist-title">Generated Playlists</span>
+            <div class="scrollable">
+                <PlaylistList :playlists="newPlaylists" selected="0" />
+            </div>
         </section>
     </div>
 </template>

@@ -18,28 +18,6 @@ const table_headers = [
         value: (item: Track) => format(new Date(item.track.duration_ms), "m:ss")
     }
 ]
-
-function splitTracks() {
-    const hour_in_ms = 1000 * 60 * 60
-    let time = 0
-    let upodatedPlaylists: any[] = []
-    let buffer: any[] = []
-    tracks.value.items.forEach(track => {
-        if (time < hour_in_ms) {
-            time += track.track["duration_ms"]
-            buffer.push(track)
-        } else {
-            upodatedPlaylists.push([...buffer])
-            time = track.track["duration_ms"]
-            buffer = [track]
-        }
-    });
-
-    if (buffer.length != 0) {
-        upodatedPlaylists.push([...buffer])
-    }
-    // newPlaylists.value = upodatedPlaylists
-}
 </script>
 
 <template>
@@ -55,10 +33,9 @@ function splitTracks() {
         <div class="main scroll-section">
             <!-- section containing action buttons [split, save all?, share?] -->
             <section>
-                <button @click="splitTracks">Split</button>
+                <button @click="$emit('onSplitPlaylist')">Split</button>
             </section>
             <div class="scroll-section">
-                <!-- initially contain original list after split display new playlists -->
                 <v-data-table-virtual :headers="table_headers" :items="playlist?.tracks.items" class="table">
                     <template v-slot:headers="{ columns }">
                         <tr>
@@ -109,10 +86,6 @@ function splitTracks() {
     display: flex;
     flex-direction: column;
     gap: 16px;
-}
-
-ul {
-    padding: 0px;
 }
 
 button {
