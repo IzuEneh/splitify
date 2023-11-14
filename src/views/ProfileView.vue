@@ -1,65 +1,55 @@
 <script setup lang="ts">
 import type { Playlist, PlaylistResponse, Track } from '@/types';
 import { ref } from 'vue';
-import { useRoute } from 'vue-router';
 import PlaylistList from '@/components/PlaylistList.vue';
 import PlaylistView from '@/components/PlaylistView.vue';
 import { watch } from 'vue';
 
-const route = useRoute()
-const { code } = route.query
 const playlists = ref<Playlist[]>([])
-const cachedCode = localStorage.getItem("access_code")
-const isLoading = ref(true)
 const errorMessage = ref("")
 const selectedID = ref("")
 const selectedPlaylist = ref<PlaylistResponse | null>(null)
 const newPlaylists = ref<any[]>([])
 
-if (code != cachedCode) {
-    getAccessToken(code as string)
-} else {
-    isLoading.value = false
-}
-
-if (!isLoading.value && playlists.value.length == 0) {
+if (playlists.value.length == 0) {
     getPlaylists("izueneh21")
 }
 
 watch(selectedID, () => getPlaylist(selectedID.value))
 
-async function getAccessToken(code: string) {
-    const verifier = localStorage.getItem("verifier");
+const getRefreshToken = async () => {
+    const refreshToken = localStorage.getItem('refresh_token');
 
-    const params = new URLSearchParams();
-    params.append("client_id", import.meta.env.VITE_CLIENT_ID);
-    params.append("grant_type", "authorization_code");
-    params.append("code", code);
-    params.append("redirect_uri", "http://localhost:5173/callback");
-    params.append("code_verifier", verifier!);
+    const params = new URLSearchParams()
+    params.append('client_id', import.meta.env.VITE_CLIENT_ID)
+    params.append('grant_type', 'refresh_token')
+    params.append('refresh_token', refreshToken!)
 
-    try {
-        const result = await fetch("https://accounts.spotify.com/api/token", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: params
-        });
+    const body = await fetch("https://accounts.spotify.com/api/token", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: params
+    });
+    const response = await body.json();
 
-        const { access_token, refresh_token, expires_in } = await result.json();
-        localStorage.setItem("access_token", access_token)
-        localStorage.setItem("access_code", code)
-        localStorage.setItem("refresh_token", refresh_token)
-        localStorage.setItem("expires_in", expires_in)
-    } catch (error) {
-        errorMessage.value = `An error occcured getting access token: ${error}`
-    } finally {
-        isLoading.value = false
-    }
+    localStorage.setItem('access_token', response.accessToken);
+    localStorage.setItem('refresh_token', response.refreshToken);
+    localStorage.setItem('expires_in', response['expires_in'])
+    localStorage.setItem('access_code_fetched_date', Date.now().toString())
+    return response.accessToken
 }
 
 async function getPlaylists(id: any) {
-    const accessToken = localStorage.getItem("access_token")
-    isLoading.value = true
+    let accessToken = localStorage.getItem("access_token")
+    const lastFetchedAccessToken = localStorage.getItem("access_code_fetched_date")
+    const expiresIn = localStorage.getItem("expires_in")
+    const currentTime = Date.now() / 1000
+    const elapsedTime = (parseInt(lastFetchedAccessToken!) / 1000) + parseInt(expiresIn!)
+    if (elapsedTime < currentTime) {
+        accessToken = await getRefreshToken()
+    }
 
     try {
         const result = await fetch(`https://api.spotify.com/v1/users/${id}/playlists`, {
@@ -72,13 +62,19 @@ async function getPlaylists(id: any) {
         selectedID.value = playlists.value[0].id
     } catch (error) {
         errorMessage.value = `An error occcured getting access token: ${error}`
-    } finally {
-        isLoading.value = false
     }
 }
 
 async function getPlaylist(id: string) {
-    const accessToken = localStorage.getItem("access_token")
+    let accessToken = localStorage.getItem("access_token")
+    const lastFetchedAccessToken = localStorage.getItem("access_code_fetched_date")
+    const expiresIn = localStorage.getItem("expires_in")
+    const currentTime = Date.now() / 1000
+    const elapsedTime = (parseInt(lastFetchedAccessToken!) / 1000) + parseInt(expiresIn!)
+    if (elapsedTime < currentTime) {
+        accessToken = await getRefreshToken()
+    }
+
     const result = await fetch(`https://api.spotify.com/v1/playlists/${id}`, {
         method: "GET",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${accessToken}` },
