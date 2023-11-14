@@ -11,13 +11,11 @@ const selectedID = ref("")
 const selectedPlaylist = ref<PlaylistResponse | null>(null)
 const newPlaylists = ref<any[]>([])
 
-if (playlists.value.length == 0) {
-    getPlaylists("izueneh21")
-}
+getPlaylists()
 
 watch(selectedID, () => getPlaylist(selectedID.value))
 
-const getRefreshToken = async () => {
+async function getRefreshToken() {
     const refreshToken = localStorage.getItem('refresh_token');
 
     const params = new URLSearchParams()
@@ -41,7 +39,11 @@ const getRefreshToken = async () => {
     return response.accessToken
 }
 
-async function getPlaylists(id: any) {
+async function getPlaylists() {
+    if (playlists.value.length !== 0) {
+        return;
+    }
+
     let accessToken = localStorage.getItem("access_token")
     const lastFetchedAccessToken = localStorage.getItem("access_code_fetched_date")
     const expiresIn = localStorage.getItem("expires_in")
@@ -50,6 +52,12 @@ async function getPlaylists(id: any) {
     if (elapsedTime < currentTime) {
         accessToken = await getRefreshToken()
     }
+
+    const user = localStorage.getItem("user")
+    if (!user) {
+        return;
+    }
+    const id = JSON.parse(user)['id']
 
     try {
         const result = await fetch(`https://api.spotify.com/v1/users/${id}/playlists`, {
@@ -85,20 +93,20 @@ async function getPlaylist(id: string) {
     selectedPlaylist.value!.tracks.items = selectedPlaylist.value!.tracks.items.map((item, index) => ({ id: index + 1, ...item }))
 }
 
-const handleSelectPlaylist = (id: string) => selectedID.value = id
+function createNewPlaylist(id: string, name: string, tracks: Track[]) {
+    return ({
+        images: [{ url: "https://source.unsplash.com/random/60×60/?music", height: 60, with: 60 }],
+        name: name,
+        owner: {
+            display_name: "current user"
+        },
+        tracks: {
+            items: tracks
+        }
+    })
+}
 
-const createNewPlaylist = (id: string, name: string, tracks: Track[]) => ({
-    images: [{ url: "https://source.unsplash.com/random/60×60/?music", height: 60, with: 60 }],
-    name: name,
-    owner: {
-        display_name: "current user"
-    },
-    tracks: {
-        items: tracks
-    }
-})
-
-const handleSplitPlaylist = () => {
+function handleSplitPlaylist() {
     const hour_in_ms = 1000 * 60 * 60
     let time = 0
     let upodatedPlaylists: any[] = []
@@ -127,7 +135,7 @@ const handleSplitPlaylist = () => {
         <section class="content-area">
             <span class="playlist-title">Your Playlists</span>
             <div class="scrollable">
-                <PlaylistList :playlists="playlists" :selected="selectedID" @on-select-playlist="handleSelectPlaylist" />
+                <PlaylistList :playlists="playlists" :selected="selectedID" @on-select-playlist="(id) => selectedID = id" />
             </div>
         </section>
 
