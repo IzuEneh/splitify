@@ -1,15 +1,17 @@
 <script setup lang="ts">
-import type { Playlist, PlaylistResponse, Track } from '@/types';
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import PlaylistList from '@/components/PlaylistList.vue';
 import PlaylistView from '@/components/PlaylistView.vue';
-import { watch } from 'vue';
+import type { Playlist, PlaylistResponse, Track } from '@/types';
 
 const playlists = ref<Playlist[]>([])
 const errorMessage = ref("")
 const selectedID = ref("")
 const selectedPlaylist = ref<PlaylistResponse | null>(null)
 const newPlaylists = ref<any[]>([])
+const router = useRouter()
+
 
 getPlaylists()
 
@@ -30,8 +32,12 @@ async function getRefreshToken() {
         },
         body: params
     });
-    const response = await body.json();
 
+    if (!body.ok) {
+        await router.push({ name: 'unauthorized' })
+        return false;
+    }
+    const response = await body.json();
     localStorage.setItem('access_token', response.accessToken);
     localStorage.setItem('refresh_token', response.refreshToken);
     localStorage.setItem('expires_in', response['expires_in'])
@@ -54,7 +60,7 @@ async function getPlaylists() {
     }
 
     const user = localStorage.getItem("user")
-    if (!user) {
+    if (!user || !accessToken) {
         return;
     }
     const id = JSON.parse(user)['id']
@@ -64,6 +70,11 @@ async function getPlaylists() {
             method: "GET",
             headers: { "Content-Type": "application/json", "Authorization": `Bearer ${accessToken}` },
         });
+
+        if (!result.ok) {
+            await router.push({ name: 'unauthorized' })
+            return;
+        }
 
         const response = await result.json();
         playlists.value = response.items
@@ -87,6 +98,11 @@ async function getPlaylist(id: string) {
         method: "GET",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${accessToken}` },
     });
+
+    if (!result.ok) {
+        await router.push({ name: 'unauthorized' })
+        return;
+    }
 
     const res = await result.json();
     selectedPlaylist.value = res

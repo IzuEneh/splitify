@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '@/views/HomeView.vue'
 import Profile from '@/views/ProfileView.vue'
+import UnauthorizedView from '@/views/UnauthorizedView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -28,11 +29,16 @@ const router = createRouter({
           const code = to.query.code as string
           const access_token = await getAccessToken(code)
 
-          return access_token && (await getUser(access_token))
+          return (access_token && (await getUser(access_token))) || { path: '/unauthorized' }
         }
 
         return true
       }
+    },
+    {
+      path: '/unauthorized',
+      name: 'unauthorized',
+      component: UnauthorizedView
     }
   ]
 })
@@ -54,6 +60,9 @@ async function getAccessToken(code: string) {
       body: params
     })
 
+    if (!result.ok) {
+      return false
+    }
     const { access_token, refresh_token, expires_in } = await result.json()
     localStorage.setItem('access_token', access_token)
     localStorage.setItem('refresh_token', refresh_token)
@@ -72,6 +81,10 @@ async function getUser(accessToken: string): Promise<boolean> {
       method: 'GET',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` }
     })
+
+    if (!result.ok) {
+      return false
+    }
     const user = await result.json()
     localStorage.setItem('user', JSON.stringify(user))
     return true
