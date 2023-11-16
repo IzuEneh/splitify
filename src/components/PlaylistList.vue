@@ -1,19 +1,29 @@
 <script setup lang="ts">
 import type { Playlist } from '@/types';
-import { ref } from 'vue';
 
 const { playlists, selected } = defineProps<{
     playlists: Playlist[],
     selected: string
 }>()
 
+const getURL = (imageArr: Array<{
+    url: string
+    height: number
+    width: number
+}>) => {
+    if (imageArr.length < 1) {
+        return 'https://source.unsplash.com/random/60×60/?music'
+    }
+
+    return imageArr[0].url
+}
 </script>
 
 <template>
     <ul class="playlist-list">
         <li v-for="playlist in playlists" :key="playlist.id" @click="$emit('onSelectPlaylist', playlist.id)">
             <div class="playlist-item" :class="{ 'selected': playlist.id === selected }">
-                <img :src="playlist.images[0].url" />
+                <img :src="getURL(playlist.images)" />
                 <div>
                     <span>{{ playlist.name }}</span>
                     <span>{{ playlist.owner.display_name }}</span>

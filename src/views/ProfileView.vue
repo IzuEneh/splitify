@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 import PlaylistList from '@/components/PlaylistList.vue';
 import PlaylistView from '@/components/PlaylistView.vue';
 import type { Playlist, PlaylistResponse, Track } from '@/types';
+import mockPlaylists from '@/mockPlaylist.json'
 
 const playlists = ref<Playlist[]>([])
 const errorMessage = ref("")
@@ -62,22 +63,27 @@ async function getPlaylists() {
     if (!user || !accessToken) {
         return;
     }
-    const id = JSON.parse(user)['id']
 
+    let url = `https://api.spotify.com/v1/me/playlists`
+    let res: any[] = []
     try {
-        const result = await fetch(`https://api.spotify.com/v1/users/${id}/playlists`, {
-            method: "GET",
-            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${accessToken}` },
-        });
+        while (url != null) {
+            const result = await fetch(url, {
+                method: "GET",
+                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${accessToken}` },
+            });
 
-        if (!result.ok) {
-            await router.push({ name: 'unauthorized' })
-            return;
+            if (!result.ok) {
+                await router.push({ name: 'unauthorized' })
+                return;
+            }
+
+            const response = await result.json();
+            res = [...res, ...response.items]
+            url = response.next
         }
-
-        const response = await result.json();
-        playlists.value = response.items
-        selectedID.value = playlists.value[0].id
+        playlists.value = res
+        selectedID.value = mockPlaylists.items[0].id
     } catch (error) {
         errorMessage.value = `An error occcured getting access token: ${error}`
     }
@@ -184,6 +190,36 @@ function handleBackPress() {
 </template>
 
 <style scoped>
+.column {
+    display: flex;
+    flex-direction: column;
+}
+
+.playlist-item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+    padding: 8px;
+    border-radius: 5px;
+}
+
+.playlist-item:hover {
+    cursor: pointer;
+    background-color: rgb(43, 43, 43);
+}
+
+.playlist-item img {
+    width: 60px;
+    height: auto;
+    border-radius: 5px;
+}
+
+.playlist-item div {
+    display: flex;
+    flex-direction: column;
+}
+
 .container {
     display: flex;
     gap: 1rem;

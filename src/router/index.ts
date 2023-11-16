@@ -29,7 +29,7 @@ const router = createRouter({
           const code = to.query.code as string
           const access_token = await getAccessToken(code)
 
-          return (access_token && (await getUser(access_token))) || { path: '/unauthorized' }
+          return access_token || { path: '/unauthorized' }
         }
 
         return true
@@ -68,27 +68,9 @@ async function getAccessToken(code: string) {
     localStorage.setItem('refresh_token', refresh_token)
     localStorage.setItem('expires_in', expires_in)
     localStorage.setItem('access_code_fetched_date', Date.now().toString())
-    return access_token
-  } catch (error) {
-    console.log(`An error occcured getting access token: ${error}`)
-    return false
-  }
-}
-
-async function getUser(accessToken: string): Promise<boolean> {
-  try {
-    const result = await fetch(`https://api.spotify.com/v1/me`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` }
-    })
-
-    if (!result.ok) {
-      return false
-    }
-    const user = await result.json()
-    localStorage.setItem('user', JSON.stringify(user))
     return true
   } catch (error) {
+    console.log(`An error occcured getting access token: ${error}`)
     return false
   }
 }

@@ -35,7 +35,7 @@ if (isDesktop.matches) {
             <img :src="playlist?.images[0].url" />
             <div>
                 <h1>{{ playlist?.name }}</h1>
-                <span>{{ playlist?.description }}</span>
+                <span><span v-html="playlist?.description"></span></span>
             </div>
         </div>
 
