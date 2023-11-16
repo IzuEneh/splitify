@@ -3,7 +3,8 @@ import type { Playlist } from '@/types';
 
 const { playlists, selected } = defineProps<{
     playlists: Playlist[],
-    selected: string
+    selected: string,
+    loading?: boolean
 }>()
 
 const getURL = (imageArr: Array<{
@@ -21,15 +22,20 @@ const getURL = (imageArr: Array<{
 
 <template>
     <ul class="playlist-list">
-        <li v-for="playlist in playlists" :key="playlist.id" @click="$emit('onSelectPlaylist', playlist.id)">
-            <div class="playlist-item" :class="{ 'selected': playlist.id === selected }">
-                <img :src="getURL(playlist.images)" />
-                <div>
-                    <span>{{ playlist.name }}</span>
-                    <span>{{ playlist.owner.display_name }}</span>
+        <template v-if="loading">
+            <v-skeleton-loader v-for="i in 10" :key="i" type="list-item-avatar" color="grey-darken-3"></v-skeleton-loader>
+        </template>
+        <template v-else>
+            <li v-for="playlist in playlists" :key="playlist.id" @click="$emit('onSelectPlaylist', playlist.id)">
+                <div class="playlist-item" :class="{ 'selected': playlist.id === selected }">
+                    <img :src="getURL(playlist.images)" />
+                    <div>
+                        <span>{{ playlist.name }}</span>
+                        <span>{{ playlist.owner.display_name }}</span>
+                    </div>
                 </div>
-            </div>
-        </li>
+            </li>
+        </template>
     </ul>
 </template>
 

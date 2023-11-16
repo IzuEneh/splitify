@@ -2,7 +2,10 @@
 import type { PlaylistResponse, Track } from '@/types';
 import format from 'date-fns/format'
 
-const { playlist } = defineProps<{ playlist: PlaylistResponse | null }>()
+const { playlist } = defineProps<{
+    playlist: PlaylistResponse | null,
+    loading?: boolean
+}>()
 const isDesktop = window.matchMedia('(min-width:961px)');
 let table_headers: any[];
 if (isDesktop.matches) {
@@ -26,17 +29,22 @@ if (isDesktop.matches) {
         { title: "Title", value: "track.name" },
     ]
 }
-
 </script>
 
 <template>
     <div class="playlist-container">
         <div class="header">
-            <img :src="playlist?.images[0].url" />
-            <div>
-                <h1>{{ playlist?.name }}</h1>
-                <span><span v-html="playlist?.description"></span></span>
-            </div>
+            <template v-if="loading">
+                <v-skeleton-loader type="image" color="grey-darken-3" class="loading-avatar"></v-skeleton-loader>
+                <v-skeleton-loader type="text" color="grey-darken-3" class="w-25"></v-skeleton-loader>
+            </template>
+            <template v-else>
+                <img :src="playlist?.images[0].url" />
+                <div>
+                    <h1>{{ playlist?.name }}</h1>
+                    <span><span v-html="playlist?.description"></span></span>
+                </div>
+            </template>
         </div>
 
         <div class="main">
@@ -45,23 +53,33 @@ if (isDesktop.matches) {
                 <button @click="$emit('onSplitPlaylist')">Split</button>
             </section>
             <div>
-                <v-data-table-virtual :headers="table_headers" :items="playlist?.tracks.items" class="table">
-                    <template v-slot:headers="{ columns }">
-                        <tr class="mobile-header">
-                            <template v-for="column in columns" :key="column.key">
-                                <td>
-                                    <span>{{ column.title }}</span>
-                                </td>
-                            </template>
-                        </tr>
-                    </template>
-                </v-data-table-virtual>
+                <template v-if="loading">
+                    <v-skeleton-loader type="table" color="grey-darken-3" class=""></v-skeleton-loader>
+                </template>
+                <template v-else>
+                    <v-data-table-virtual :headers="table_headers" :items="playlist?.tracks.items" class="table">
+                        <template v-slot:headers="{ columns }">
+                            <tr class="mobile-header">
+                                <template v-for="column in columns" :key="column.key">
+                                    <td>
+                                        <span>{{ column.title }}</span>
+                                    </td>
+                                </template>
+                            </tr>
+                        </template>
+                    </v-data-table-virtual>
+                </template>
             </div>
         </div>
     </div>
 </template>
 
 <style scoped>
+.loading-avatar {
+    height: 200px;
+    width: 200px;
+}
+
 .playlist-container {
     display: flex;
     flex-direction: column;

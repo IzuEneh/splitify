@@ -13,6 +13,7 @@ const selectedPlaylist = ref<PlaylistResponse | null>(null)
 const newPlaylists = ref<any[]>([])
 const router = useRouter()
 const activeWindow = ref(0)
+const loading = ref(true)
 
 getPlaylists()
 watch(selectedID, () => getPlaylist(selectedID.value))
@@ -47,6 +48,7 @@ async function getRefreshToken() {
 
 async function getPlaylists() {
     if (playlists.value.length !== 0) {
+        loading.value = false;
         return;
     }
 
@@ -61,6 +63,7 @@ async function getPlaylists() {
 
     const user = localStorage.getItem("user")
     if (!user || !accessToken) {
+        loading.value = false;
         return;
     }
 
@@ -84,6 +87,7 @@ async function getPlaylists() {
         }
         playlists.value = res
         selectedID.value = mockPlaylists.items[0].id
+        loading.value = false
     } catch (error) {
         errorMessage.value = `An error occcured getting access token: ${error}`
     }
@@ -166,7 +170,8 @@ function handleBackPress() {
         <section class="content-area" :class="{ 'activeWindow': activeWindow > -1 }">
             <span class="playlist-title">Your Playlists</span>
             <div class="scrollable">
-                <PlaylistList :playlists="playlists" :selected="selectedID" @on-select-playlist="handleSelectPlaylist" />
+                <PlaylistList :playlists="playlists" :selected="selectedID" :loading="loading"
+                    @on-select-playlist="handleSelectPlaylist" />
             </div>
         </section>
 
@@ -174,7 +179,7 @@ function handleBackPress() {
             <div class="button-container">
                 <button @click="handleBackPress" class="back-button">&larr;</button>
             </div>
-            <PlaylistView :playlist="selectedPlaylist" @on-split-playlist="handleSplitPlaylist" />
+            <PlaylistView :playlist="selectedPlaylist" :loading="loading" @on-split-playlist="handleSplitPlaylist" />
         </section>
 
         <section class="content-area" v-if="newPlaylists.length > 0" :class="{ 'activeWindow': activeWindow > 1 }">
@@ -190,36 +195,6 @@ function handleBackPress() {
 </template>
 
 <style scoped>
-.column {
-    display: flex;
-    flex-direction: column;
-}
-
-.playlist-item {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 16px;
-    padding: 8px;
-    border-radius: 5px;
-}
-
-.playlist-item:hover {
-    cursor: pointer;
-    background-color: rgb(43, 43, 43);
-}
-
-.playlist-item img {
-    width: 60px;
-    height: auto;
-    border-radius: 5px;
-}
-
-.playlist-item div {
-    display: flex;
-    flex-direction: column;
-}
-
 .container {
     display: flex;
     gap: 1rem;
