@@ -13,14 +13,14 @@ const router = createRouter({
       beforeEnter: () => {
         const accessToken = localStorage.getItem('access_token')
         if (accessToken) {
-          return { path: '/callback' }
+          return { path: '/playlists' }
         }
 
         return true
       }
     },
     {
-      path: '/callback',
+      path: '/playlists',
       name: 'profile',
       component: Profile,
       beforeEnter: async (to) => {
@@ -50,7 +50,7 @@ async function getAccessToken(code: string) {
   params.append('client_id', import.meta.env.VITE_CLIENT_ID)
   params.append('grant_type', 'authorization_code')
   params.append('code', code)
-  params.append('redirect_uri', 'http://localhost:5173/callback')
+  params.append('redirect_uri', import.meta.env.VITE_REDIRECT_URI)
   params.append('code_verifier', verifier!)
 
   try {
