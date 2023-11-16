@@ -3,21 +3,30 @@ import type { PlaylistResponse, Track } from '@/types';
 import format from 'date-fns/format'
 
 const { playlist } = defineProps<{ playlist: PlaylistResponse | null }>()
-const table_headers = [
-    { title: "#", value: "id" },
-    { title: "Title", value: "track.name" },
-    { title: "Album", value: "track.album.name" },
-    {
-        title: "Date added",
-        key: "date",
-        value: (item: Track) => format(new Date(item.added_at), "MMM d, yyy")
-    },
-    {
-        title: "Length",
-        key: "length",
-        value: (item: Track) => format(new Date(item.track.duration_ms), "m:ss")
-    }
-]
+const isDesktop = window.matchMedia('(min-width:961px)');
+let table_headers: any[];
+if (isDesktop.matches) {
+    table_headers = [
+        { title: "#", value: "id" },
+        { title: "Title", value: "track.name" },
+        { title: "Album", value: "track.album.name" },
+        {
+            title: "Date added",
+            key: "date",
+            value: (item: Track) => format(new Date(item.added_at), "MMM d, yyy")
+        },
+        {
+            title: "Length",
+            key: "length",
+            value: (item: Track) => format(new Date(item.track.duration_ms), "m:ss")
+        }
+    ]
+} else {
+    table_headers = [
+        { title: "Title", value: "track.name" },
+    ]
+}
+
 </script>
 
 <template>
@@ -30,15 +39,15 @@ const table_headers = [
             </div>
         </div>
 
-        <div class="main scroll-section">
+        <div class="main">
             <!-- section containing action buttons [split, save all?, share?] -->
             <section>
                 <button @click="$emit('onSplitPlaylist')">Split</button>
             </section>
-            <div class="scroll-section">
+            <div>
                 <v-data-table-virtual :headers="table_headers" :items="playlist?.tracks.items" class="table">
                     <template v-slot:headers="{ columns }">
-                        <tr>
+                        <tr class="mobile-header">
                             <template v-for="column in columns" :key="column.key">
                                 <td>
                                     <span>{{ column.title }}</span>
@@ -57,8 +66,7 @@ const table_headers = [
     display: flex;
     flex-direction: column;
     width: 100%;
-    padding: 0px 16px;
-    overflow: hidden;
+    overflow-y: scroll;
 }
 
 .header {
@@ -78,8 +86,6 @@ const table_headers = [
 .header div {
     display: flex;
     flex-direction: column;
-    /* align-items: flex-start; */
-    /* justify-content: ; */
 }
 
 .main {
@@ -107,10 +113,6 @@ button {
     border: none;
 }
 
-.scroll-section {
-    overflow-y: scroll;
-}
-
 .table {
     color: white;
     background-color: transparent;
@@ -118,5 +120,20 @@ button {
 
 .table th span {
     color: white
+}
+
+@media (max-width:960px) {
+    .header {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .main {
+        align-items: center;
+    }
+
+    .mobile-header {
+        display: none;
+    }
 }
 </style>

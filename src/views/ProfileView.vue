@@ -11,10 +11,9 @@ const selectedID = ref("")
 const selectedPlaylist = ref<PlaylistResponse | null>(null)
 const newPlaylists = ref<any[]>([])
 const router = useRouter()
-
+const activeWindow = ref(0)
 
 getPlaylists()
-
 watch(selectedID, () => getPlaylist(selectedID.value))
 
 async function getRefreshToken() {
@@ -143,23 +142,39 @@ function handleSplitPlaylist() {
     }
 
     newPlaylists.value = upodatedPlaylists
+    activeWindow.value++
+}
+
+function handleSelectPlaylist(id: string) {
+    activeWindow.value++
+    selectedID.value = id
+}
+
+function handleBackPress() {
+    activeWindow.value--
 }
 </script>
 
 <template>
     <div class="container">
-        <section class="content-area">
+        <section class="content-area" :class="{ 'activeWindow': activeWindow > -1 }">
             <span class="playlist-title">Your Playlists</span>
             <div class="scrollable">
-                <PlaylistList :playlists="playlists" :selected="selectedID" @on-select-playlist="(id) => selectedID = id" />
+                <PlaylistList :playlists="playlists" :selected="selectedID" @on-select-playlist="handleSelectPlaylist" />
             </div>
         </section>
 
-        <section class="content-area grow">
+        <section class="content-area grow" :class="{ 'activeWindow': activeWindow > 0 }">
+            <div class="button-container">
+                <button @click="handleBackPress" class="back-button">&larr;</button>
+            </div>
             <PlaylistView :playlist="selectedPlaylist" @on-split-playlist="handleSplitPlaylist" />
         </section>
 
-        <section class="content-area" v-if="newPlaylists.length > 0">
+        <section class="content-area" v-if="newPlaylists.length > 0" :class="{ 'activeWindow': activeWindow > 1 }">
+            <div class="button-container">
+                <button @click="handleBackPress" class="back-button">&larr;</button>
+            </div>
             <span class="playlist-title">Generated Playlists</span>
             <div class="scrollable">
                 <PlaylistList :playlists="newPlaylists" selected="0" />
@@ -180,7 +195,7 @@ function handleSplitPlaylist() {
 .content-area {
     background-color: var(--color-background-soft);
     border-radius: 10px;
-    width: 25vw;
+    width: 20vw;
     display: flex;
     flex-direction: column;
     padding: 16px;
@@ -197,5 +212,46 @@ function handleSplitPlaylist() {
 
 .scrollable {
     overflow-y: scroll;
+}
+
+.button-container {
+    display: none;
+}
+
+@media (max-width:960px) {
+    .content-area {
+        height: 100%;
+        /* 100% Full-height */
+        width: 0;
+        /* 0 width - change this with JavaScript */
+        position: fixed;
+        /* Stay in place */
+        z-index: 1;
+        /* Stay on top */
+        top: 0;
+        right: 0;
+        background-color: var(--color-background-soft);
+        /* Black*/
+        overflow-x: hidden;
+        /* Disable horizontal scroll */
+        /* padding-top: 60px; */
+        padding: 0px;
+        /* Place content 60px from the top */
+        transition: 0.5s;
+        /* 0.5 second transition effect to slide in the sidebar */
+        border-radius: unset;
+    }
+
+    .activeWindow {
+        width: 100vw;
+        padding: 16px;
+    }
+
+    .button-container {
+        width: 100%;
+        font-size: 1.5rem;
+        display: block;
+    }
+
 }
 </style>

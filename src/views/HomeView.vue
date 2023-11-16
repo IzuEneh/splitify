@@ -1,5 +1,4 @@
 <script setup lang="ts">
-
 async function redirectToAuthCodeFlow() {
     const verifier = generateCodeVerifier(128);
     const challenge = await generateCodeChallenge(verifier);
@@ -35,7 +34,6 @@ async function generateCodeChallenge(codeVerifier: string) {
         .replace(/\//g, '_')
         .replace(/=+$/, '');
 }
-
 </script>
 
 <template>
@@ -53,19 +51,16 @@ async function generateCodeChallenge(codeVerifier: string) {
 
 <style scoped>
 .container {
-    display: grid;
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr 2fr;
-    grid-template-areas:
-        "header"
-        "main";
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
     height: 100vh;
     width: 100vw;
-    justify-items: center;
+    padding: 16px;
 }
 
 header {
-    grid-area: header;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -77,11 +72,14 @@ h1 {
 }
 
 span {
-    font-size: 1.5rem;
+    font-size: 1.2rem;
 }
 
 main {
-    grid-area: main
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 button {
@@ -109,11 +107,22 @@ button:hover {
 
 @media (min-width:961px) {
     .container {
-        grid-template-columns: 1fr 1fr;
-        grid-template-rows: 1fr;
-        grid-template-areas:
-            "header main";
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
         align-items: center;
+    }
+
+    header {
+        flex: 1;
+    }
+
+    h1 {
+        font-size: 3rem;
+    }
+
+    span {
+        font-size: 1.5rem;
     }
 }
 </style>
