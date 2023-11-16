@@ -39,7 +39,7 @@ async function generateCodeChallenge(codeVerifier: string) {
 <template>
     <div class="container">
         <header>
-            <h1>Playlist Splitter</h1>
+            <h1>Splitify</h1>
             <span>split your spotify playlists!</span>
         </header>
 
