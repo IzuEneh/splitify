@@ -61,9 +61,10 @@ async function getPlaylists() {
         accessToken = await getRefreshToken()
     }
 
-    const user = localStorage.getItem("user")
-    if (!user || !accessToken) {
+    if (!accessToken) {
         loading.value = false;
+        console.log("No access token")
+        await router.push({ name: 'unauthorized' })
         return;
     }
 
