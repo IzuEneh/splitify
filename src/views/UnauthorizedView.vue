@@ -1,13 +1,19 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
 const router = useRouter()
+
+const tryAgain = () => {
+    localStorage.removeItem("access_token")
+    localStorage.removeItem("refresh_token")
+    router.push({ name: 'home' })
+}
 </script>
 
 <template>
     <div class="container">
         <h1>Unable to Authenticate with Spotify</h1>
         <p>please try again.</p>
-        <button @click="router.push({ name: 'home' })">Try again</button>
+        <button @click="tryAgain">Try again</button>
     </div>
 </template>
 
