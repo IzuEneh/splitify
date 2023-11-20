@@ -3,13 +3,13 @@ import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import PlaylistList from '@/components/PlaylistList.vue';
 import PlaylistView from '@/components/PlaylistView.vue';
-import type { PlaylistResponse, Track } from '@/types';
+import type { PlaylistResponse, GeneratedPlaylist, Track } from '@/types';
 import usePlaylists from '@/composables/usePlaylists';
 import fetchAccessToken from '@/api/fetch';
 
 const selectedID = ref("")
-const selectedPlaylist = ref<PlaylistResponse | null>(null)
-const newPlaylists = ref<any[]>([])
+const selectedPlaylist = ref<PlaylistResponse | GeneratedPlaylist | null>(null)
+const newPlaylists = ref<GeneratedPlaylist[]>([])
 const router = useRouter()
 const activeWindow = ref(0)
 const { playlists, loading, error } = usePlaylists()
@@ -48,15 +48,18 @@ async function getPlaylist(id: string) {
     }
 }
 
-function createNewPlaylist(id: string, name: string, tracks: Track[]) {
+function createNewPlaylist(id: number, name: string, tracks: Track[]) {
     return ({
+        id,
         images: [{ url: "https://source.unsplash.com/random/60×60/?music", height: 60, with: 60 }],
         name: name,
+        description: "new playlist created by ai",
         owner: {
             display_name: "current user"
         },
         tracks: {
-            items: tracks
+            total: tracks.length,
+            items: tracks.map((item, index) => ({ id: index + 1, ...item }))
         }
     })
 }
@@ -64,24 +67,24 @@ function createNewPlaylist(id: string, name: string, tracks: Track[]) {
 function handleSplitPlaylist() {
     const hour_in_ms = 1000 * 60 * 60
     let time = 0
-    let upodatedPlaylists: any[] = []
+    let updatedPlaylists: any[] = []
     let buffer: Track[] = []
-    selectedPlaylist.value?.tracks.items.forEach(track => {
+    selectedPlaylist.value?.tracks.items.forEach((track) => {
         if (time < hour_in_ms) {
             time += track.track["duration_ms"]
             buffer.push(track)
         } else {
-            upodatedPlaylists.push(createNewPlaylist(`${upodatedPlaylists.length}`, `Playlist ${upodatedPlaylists.length + 1}`, [...buffer]))
+            updatedPlaylists.push(createNewPlaylist(updatedPlaylists.length, `Playlist ${updatedPlaylists.length + 1}`, [...buffer]))
             time = track.track["duration_ms"]
             buffer = [track]
         }
     });
 
     if (buffer.length != 0) {
-        upodatedPlaylists.push(createNewPlaylist(`${upodatedPlaylists.length}`, `Playlist ${upodatedPlaylists.length + 1}`, [...buffer]))
+        updatedPlaylists.push(createNewPlaylist(updatedPlaylists.length, `Playlist ${updatedPlaylists.length + 1}`, [...buffer]))
     }
 
-    newPlaylists.value = upodatedPlaylists
+    newPlaylists.value = updatedPlaylists
     activeWindow.value++
 }
 
@@ -93,6 +96,10 @@ function handleSelectPlaylist(id: string) {
 
 function handleBackPress() {
     activeWindow.value--
+}
+
+function handleNewPlaylist(id: number) {
+    selectedPlaylist.value = newPlaylists.value[id]
 }
 </script>
 
@@ -119,7 +126,7 @@ function handleBackPress() {
             </div>
             <span class="playlist-title">Generated Playlists</span>
             <div class="scrollable">
-                <PlaylistList :playlists="newPlaylists" selected="0" />
+                <PlaylistList :playlists="newPlaylists" selected="0" @on-select-playlist="handleNewPlaylist" />
             </div>
         </section>
     </div>

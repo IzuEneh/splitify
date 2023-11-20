@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { Playlist } from '@/types';
+import type { GeneratedPlaylist, Playlist } from '@/types';
 
 const { playlists, selected } = defineProps<{
-    playlists: Playlist[],
+    playlists: Playlist[] | GeneratedPlaylist[],
     selected: string,
     loading?: boolean
 }>()

@@ -200,3 +200,21 @@ export type Track = {
     is_local: false
   }
 }
+
+export type GeneratedPlaylist = {
+  id: number
+  images: Array<{
+    url: string
+    height: number
+    width: number
+  }>
+  name: string
+  description: string
+  owner: {
+    display_name: string
+  }
+  tracks: {
+    total: number
+    items: Track[]
+  }
+}

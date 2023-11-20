@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { PlaylistResponse, Track } from '@/types';
+import type { GeneratedPlaylist, PlaylistResponse, Track } from '@/types';
 import format from 'date-fns/format'
 
 const { playlist } = defineProps<{
-    playlist: PlaylistResponse | null,
+    playlist: PlaylistResponse | GeneratedPlaylist | null,
     loading?: boolean
 }>()
 const isDesktop = window.matchMedia('(min-width:961px)');
