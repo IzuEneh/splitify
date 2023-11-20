@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { GeneratedPlaylist, Playlist } from '@/types';
 
-const { playlists, selected } = defineProps<{
+const props = defineProps<{
     playlists: Playlist[] | GeneratedPlaylist[],
     selected: string,
     loading?: boolean

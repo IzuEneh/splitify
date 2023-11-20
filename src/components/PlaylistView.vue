@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import type { GeneratedPlaylist, PlaylistResponse, Track } from '@/types';
+import { computed } from 'vue'
 import format from 'date-fns/format'
+import type { GeneratedPlaylist, PlaylistResponse, Track } from '@/types';
 
-const { playlist } = defineProps<{
+const props = defineProps<{
     playlist: PlaylistResponse | GeneratedPlaylist | null,
     loading?: boolean
 }>()
+const isSpotifyPlaylist = computed(() => props.playlist != null && "href" in props.playlist)
 const isDesktop = window.matchMedia('(min-width:961px)');
 let table_headers: any[];
 if (isDesktop.matches) {
@@ -50,7 +52,8 @@ if (isDesktop.matches) {
         <div class="main">
             <!-- section containing action buttons [split, save all?, share?] -->
             <section>
-                <button @click="$emit('onSplitPlaylist')">Split</button>
+                <button v-if="isSpotifyPlaylist" @click="$emit('onSplitPlaylist')">Split</button>
+                <button v-else @click="$emit('onSavePlaylist')">Save</button>
             </section>
             <div>
                 <template v-if="loading">

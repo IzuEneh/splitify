@@ -101,6 +101,10 @@ function handleBackPress() {
 function handleNewPlaylist(id: number) {
     selectedPlaylist.value = newPlaylists.value[id]
 }
+
+function handleSavePlaylist() {
+    console.log('saved')
+}
 </script>
 
 <template>
@@ -117,7 +121,8 @@ function handleNewPlaylist(id: number) {
             <div class="button-container">
                 <button @click="handleBackPress" class="back-button">&larr;</button>
             </div>
-            <PlaylistView :playlist="selectedPlaylist" :loading="loading" @on-split-playlist="handleSplitPlaylist" />
+            <PlaylistView :playlist="selectedPlaylist" :loading="loading" @on-split-playlist="handleSplitPlaylist"
+                @on-save-playlist="handleSavePlaylist" />
         </section>
 
         <section class="content-area" v-if="newPlaylists.length > 0" :class="{ 'activeWindow': activeWindow > 1 }">
