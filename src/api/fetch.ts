@@ -1,4 +1,4 @@
-export default async function fetchAccessToken() {
+async function fetchAccessToken() {
   const accessToken = localStorage.getItem('access_token')
   const expiresIn = localStorage.getItem('expires_in')
   const lastFetchedAccessToken = localStorage.getItem('access_code_fetched_date')
@@ -33,3 +33,26 @@ export default async function fetchAccessToken() {
   localStorage.setItem('access_code_fetched_date', Date.now().toString())
   return access_token
 }
+
+async function fetchUser() {
+  const user = localStorage.getItem('user')
+  if (user) {
+    return JSON.parse(user)
+  }
+
+  const accessToken = await fetchAccessToken()
+  const resp = await fetch('https://api.spotify.com/v1/me', {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` }
+  })
+
+  if (!resp.ok) {
+    throw new Error(`Error fetching user: ${resp.status} ${resp.statusText}`)
+  }
+
+  const userResp = await resp.json()
+  localStorage.setItem('user', JSON.stringify(userResp))
+  return userResp
+}
+
+export { fetchUser, fetchAccessToken }

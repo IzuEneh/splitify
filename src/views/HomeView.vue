@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const permissionString = "user-read-private user-read-email playlist-read-private playlist-read-collaborative playlist-modify-public playlist-modify-private"
 async function redirectToAuthCodeFlow() {
     const verifier = generateCodeVerifier(128);
     const challenge = await generateCodeChallenge(verifier);
@@ -9,7 +10,7 @@ async function redirectToAuthCodeFlow() {
     params.append("client_id", import.meta.env.VITE_CLIENT_ID);
     params.append("response_type", "code");
     params.append("redirect_uri", import.meta.env.VITE_REDIRECT_URI);
-    params.append("scope", "user-read-private user-read-email playlist-read-private playlist-read-collaborative");
+    params.append("scope", permissionString);
     params.append("code_challenge_method", "S256");
     params.append("code_challenge", challenge);
 

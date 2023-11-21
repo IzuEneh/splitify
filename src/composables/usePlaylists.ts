@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import type { Playlist } from '@/types'
-import fetchAccessToken from '@/api/fetch'
+import { fetchAccessToken } from '@/api/fetch'
 
 export default function usePlaylists() {
   const playlists = ref<Playlist[]>([])

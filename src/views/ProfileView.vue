@@ -5,14 +5,16 @@ import PlaylistList from '@/components/PlaylistList.vue';
 import PlaylistView from '@/components/PlaylistView.vue';
 import type { PlaylistResponse, GeneratedPlaylist, Track } from '@/types';
 import usePlaylists from '@/composables/usePlaylists';
-import fetchAccessToken from '@/api/fetch';
+import { fetchAccessToken, fetchUser } from '@/api/fetch';
 
+const router = useRouter()
+const { playlists, loading, error } = usePlaylists()
 const selectedID = ref("")
 const selectedPlaylist = ref<PlaylistResponse | GeneratedPlaylist | null>(null)
 const newPlaylists = ref<GeneratedPlaylist[]>([])
-const router = useRouter()
 const activeWindow = ref(0)
-const { playlists, loading, error } = usePlaylists()
+const showModal = ref(false)
+const modalMessage = ref("")
 
 watch(playlists, () => {
     if (playlists.value.length != 0) {
@@ -59,7 +61,7 @@ function createNewPlaylist(id: number, name: string, tracks: Track[]) {
         },
         tracks: {
             total: tracks.length,
-            items: tracks.map((item, index) => ({ id: index + 1, ...item }))
+            items: tracks.map((item, index) => ({ ...item, id: index + 1 }))
         }
     })
 }
@@ -102,8 +104,55 @@ function handleNewPlaylist(id: number) {
     selectedPlaylist.value = newPlaylists.value[id]
 }
 
-function handleSavePlaylist() {
-    console.log('saved')
+async function handleSavePlaylist() {
+    if (!selectedPlaylist.value) {
+        return;
+    }
+
+    showModal.value = true
+    modalMessage.value = "One moment while we save your playlist"
+    try {
+        const [user, accessToken] = await Promise.all([fetchUser(), fetchAccessToken()])
+        const resp = await fetch(`https://api.spotify.com/v1/users/${user.id}/playlists`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${accessToken}` },
+            body: JSON.stringify({
+                "name": selectedPlaylist.value.name,
+                "description": selectedPlaylist.value.description,
+                "public": "false"
+            })
+        })
+
+        if (!resp.ok) {
+            console.log("unable to create playlist")
+            showModal.value = true
+            modalMessage.value = "An Error occured saving your playlist"
+            return;
+        }
+
+        const { id } = await resp.json()
+        const uris = selectedPlaylist.value.tracks.items.map(track => track.track.uri)
+        const resp2 = await fetch(`https://api.spotify.com/v1/playlists/${id}/tracks`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${accessToken}` },
+            body: JSON.stringify({
+                "uris": uris
+            })
+        })
+
+        if (!resp2.ok) {
+            console.log("unable to add tracks to playlist with id: ", id)
+            showModal.value = true
+            modalMessage.value = "An Error occured saving your playlist"
+            return
+        }
+
+        console.log("tracks added successfully")
+        showModal.value = true
+        modalMessage.value = "Playlist saved successfully!"
+    } catch (err) {
+        console.log(err)
+    }
 }
 </script>
 
@@ -123,6 +172,7 @@ function handleSavePlaylist() {
             </div>
             <PlaylistView :playlist="selectedPlaylist" :loading="loading" @on-split-playlist="handleSplitPlaylist"
                 @on-save-playlist="handleSavePlaylist" />
+            <v-snackbar v-model="showModal" timeout="2000">{{ modalMessage }}</v-snackbar>
         </section>
 
         <section class="content-area" v-if="newPlaylists.length > 0" :class="{ 'activeWindow': activeWindow > 1 }">
