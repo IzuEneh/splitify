@@ -4,6 +4,7 @@ FROM node as node-build
 WORKDIR /src
 
 COPY client/ .
+RUN npm ci
 RUN npm run build
 
 ##############################################
