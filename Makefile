@@ -25,24 +25,12 @@ stop:
     docker rm $(CONTAINER_NAME)
 
 # Remove the built image
-# docker rmi $(IMAGE_NAME)
 clean:
 	docker rmi $(IMAGE_NAME)
 
 # Default target
 all: build run
 
+# Log environment variable value for testing
 env:
 	@echo "CLIENT_ID=$(SPOTIFY_CLIENT_ID)"
-
-
-# Usage instruction
-# help:
-#     @echo "Usage: " \
-# 	@echo "    Before running the container, you need to set the environment variables CLIENT_ID. Please go to the Spotify Developer Dashboard to get your client ID." \
-#     @echo "    make build - Build the Docker image" \ 
-#     @echo "    make run - Run the container" \
-#     @echo "    make stop - Stop and remove the container" \
-#     @echo "    make clean - Remove the built image" \
-#     @echo "    make all - Build and run the container" \
-#     @echo "    make help - Display this message" \
