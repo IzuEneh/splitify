@@ -1,12 +1,16 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
+	"github.com/gin-contrib/static"
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	fmt.Println("Starting server...")
-	http.Handle("/", http.FileServer(http.Dir("./static")))
-	http.ListenAndServe("0.0.0.0:8080", nil)
+	router := gin.Default()
+	router.Use(static.Serve("/", static.LocalFile("/static", false)))
+	// Handle 404s by serving the index.html page
+	router.NoRoute(func(c *gin.Context) {
+		c.File("./static/index.html")
+	})
+	router.Run()
 }
