@@ -135,12 +135,12 @@ button {
 }
 
 .table {
-    color: white;
+    color: var(--color-text);
     background-color: transparent;
 }
 
 .table th span {
-    color: white
+    color: var(--color-text);
 }
 
 @media (max-width:960px) {
