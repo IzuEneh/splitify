@@ -16,13 +16,15 @@ RUN npm ci
 RUN VITE_REDIRECT_URI=${REDIRECT_URI} VITE_CLIENT_ID=${CLIENT_ID} npm run ${BUILD_COMMAND}
 
 ##############################################
+ARG GIN_MODE=release
 FROM golang:alpine as go-build
+ARG GIN_MODE
 
 WORKDIR /app
 
 COPY server/ .
 RUN go mod download && go mod verify
-RUN go build -o ./server .
+RUN GIN_MODE=${GIN_MODE} go build -o ./server .
 
 
 # ##############################################
