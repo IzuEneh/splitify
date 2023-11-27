@@ -7,10 +7,9 @@ import (
 
 func main() {
 	router := gin.Default()
-	router.Use(static.Serve("/", static.LocalFile("/static", false)))
-	// Handle 404s by serving the index.html page
+	router.Use(static.Serve("/", static.LocalFile("./static", false)))
 	router.NoRoute(func(c *gin.Context) {
 		c.File("./static/index.html")
 	})
-	router.Run()
+	router.Run(":8080")
 }
