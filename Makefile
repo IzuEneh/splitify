@@ -1,36 +1,41 @@
 include .env
 export
 
-# Default environment variables
-REDIRECT_URI ?= http://localhost:8080/playlists
-CLIENT_ID ?= $(SPOTIFY_CLIENT_ID)
-BUILD_COMMAND = build:dev
-IMAGE_NAME ?= splitify-image
-CURRENT_DATE = $(shell date '+%Y-%m-%d')
-CONTAINER_NAME ?= splitify-dev
+IMAGE_NAME = splitify-image
+CURRENT_DIR = $(shell pwd)
 
-.PHONY: build run stop clean all help
+# Docker build command
+DOCKER_BUILD = docker build  --build-arg "GIN_MODE=$(GIN_MODE)" --build-arg "BUILD_COMMAND=build:dev" --build-arg "CLIENT_ID=$(SPOTIFY_CLIENT_ID)" --build-arg "REDIRECT_URI=$(REDIRECT_URI)" -t $(IMAGE_NAME) .
 
-# Build the Docker image
-build: 
-	docker build --build-arg BUILD_COMMAND=$(BUILD_COMMAND) --build-arg CLIENT_ID=$(CLIENT_ID) --build-arg REDIRECT_URI=$(REDIRECT_URI) -t $(IMAGE_NAME) .
+# Docker run command
+DOCKER_RUN = docker run -it --rm -p 8080:8080 $(IMAGE_NAME)
 
-# Run the container from the built image
-run:
-	docker run -d --name $(CONTAINER_NAME) -p 8080:8080 $(IMAGE_NAME)
+LOCAL_BUILD_NODE = cd $(CURRENT_DIR)/client && VITE_REDIRECT_URI=$(REDIRECT_URI) VITE_CLIENT_ID=$(SPOTIFY_CLIENT_ID) npm run build:dev -- --outDir "../dev/static" --emptyOutDir 
 
-# Stop and remove the running container
-stop:
-	docker stop $(CONTAINER_NAME) \
-    docker rm $(CONTAINER_NAME)
+LOCAL_BUILD_GO = cd $(CURRENT_DIR)/server && go build -o $(CURRENT_DIR)/dev/server .
 
-# Remove the built image
-clean:
-	docker rmi $(IMAGE_NAME)
+RUN_SERVER = cd $(CURRENT_DIR)/dev && ./server
+
+# Targets
+.PHONY: prod clean local go docker
 
 # Default target
-all: build run
+local:
+	$(LOCAL_BUILD_NODE)
+	$(LOCAL_BUILD_GO)
+	$(RUN_SERVER)
 
-# Log environment variable value for testing
-env:
-	@echo "CLIENT_ID=$(SPOTIFY_CLIENT_ID)"
+clean: clean-local
+	docker rmi -f $(IMAGE_NAME) || true
+
+
+clean-local:
+	rm -rf dev/
+
+go:
+	$(LOCAL_BUILD_GO)
+	$(RUN_SERVER)
+
+docker:
+	$(DOCKER_BUILD)
+	$(DOCKER_RUN)
