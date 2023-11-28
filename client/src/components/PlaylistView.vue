@@ -5,11 +5,15 @@ import type { GeneratedPlaylist, PlaylistResponse, Track } from '@/types';
 
 const props = defineProps<{
     playlist: PlaylistResponse | GeneratedPlaylist | null,
+    openAiKeyValue: string,
     loading?: boolean
 }>()
+
 const isSpotifyPlaylist = computed(() => props.playlist != null && "href" in props.playlist)
 const isDesktop = window.matchMedia('(min-width:961px)');
+
 let table_headers: any[];
+
 if (isDesktop.matches) {
     table_headers = [
         { title: "#", value: "id" },
@@ -31,6 +35,7 @@ if (isDesktop.matches) {
         { title: "Title", value: "track.name" },
     ]
 }
+
 </script>
 
 <template>
@@ -49,10 +54,18 @@ if (isDesktop.matches) {
             </template>
         </div>
 
+
+
         <div class="main">
             <!-- section containing action buttons [split, save all?, share?] -->
             <section>
                 <button v-if="isSpotifyPlaylist" @click="$emit('onSplitPlaylist')">Split</button>
+                <button v-if="isSpotifyPlaylist" @click="$emit('onAutoPlaylist')">AI Split</button>
+                <input v-if="isSpotifyPlaylist" 
+                @value="openAiKeyValue"
+                @input="$event.target && $emit('input-openaikey-changed', $event.target.value)"
+                type="text" 
+                placeholder="OpenAI Key Here" />
                 <button v-else @click="$emit('onSavePlaylist')">Save</button>
             </section>
             <div>
@@ -113,6 +126,12 @@ if (isDesktop.matches) {
     display: flex;
     flex-direction: column;
     gap: 16px;
+}
+
+section {
+    display: flex;
+    align-items: left; /* Align items vertically in the center */
+    gap: 10px; /* Optional: adds space between items */
 }
 
 button {

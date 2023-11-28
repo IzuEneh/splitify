@@ -6,6 +6,7 @@ import PlaylistView from '@/components/PlaylistView.vue';
 import type { PlaylistResponse, GeneratedPlaylist, Track } from '@/types';
 import usePlaylists from '@/composables/usePlaylists';
 import { fetchAccessToken, fetchUser } from '@/api/fetch';
+import { requestAutoPlaylist } from '@/api/openai';
 
 const router = useRouter()
 const { playlists, loading, error } = usePlaylists()
@@ -15,6 +16,8 @@ const newPlaylists = ref<GeneratedPlaylist[]>([])
 const activeWindow = ref(0)
 const showModal = ref(false)
 const modalMessage = ref("")
+const openaiKey = ref("")
+
 
 watch(playlists, () => {
     if (playlists.value.length != 0) {
@@ -71,6 +74,7 @@ function handleSplitPlaylist() {
     let time = 0
     let updatedPlaylists: any[] = []
     let buffer: Track[] = []
+
     selectedPlaylist.value?.tracks.items.forEach((track) => {
         if (time < hour_in_ms) {
             time += track.track["duration_ms"]
@@ -88,6 +92,80 @@ function handleSplitPlaylist() {
 
     newPlaylists.value = updatedPlaylists
     activeWindow.value++
+}
+
+function handleAutoPlaylist() {
+    let updatedPlaylists: any[] = []
+    let buffer: Track[] = []
+    let theme: string
+
+    let track_list = ""
+
+    selectedPlaylist.value?.tracks.items.forEach((track) => {
+       let song_string = track.track.name;
+
+       track.track.artists.forEach((artist) => {
+        song_string += " "+artist.name;
+       })
+
+       song_string += " "+track.track.album.name+",";
+       track_list += song_string
+    
+    });
+
+    console.log(track_list);
+
+    if (openaiKey.value != null) {
+        
+        requestAutoPlaylist(openaiKey.value, track_list).then((response) => {
+
+            if (!response.ok) {
+
+                showModal.value = true;
+                modalMessage.value = "An error occured while generating your auto playlist";
+
+            } else {
+
+                const data = response.json().then((value) => {
+                    // Extracts gpt response, removes " characters, and splits the string by lines into an array
+                    let playlist_string = value.choices[0].message.content.replace(/"/g, '').split(/\r?\n/);
+                    playlist_string.forEach((e:string) => {
+
+                        if (e.includes("Theme")){
+                            //Extracts Theme from string
+                            theme = e.slice(e.lastIndexOf(":")+1);
+                        }
+
+                        // If it starts with a number
+                        if (/^\d/.test(e)) {
+
+                            e.replace(/^\d+\./, '') // Removes the number
+                            selectedPlaylist.value?.tracks.items.forEach((track) => {
+            
+                                // Tests for track and artist name
+                                if (e.includes(track.track.name) && e.includes(track.track.artists[0].name) ) {
+                                    buffer.push(track)
+                                }
+
+                            });
+                        }
+                    });
+
+                        if (buffer.length != 0) {
+                            updatedPlaylists.push(createNewPlaylist(updatedPlaylists.length, "Theme: "+theme, [...buffer]))
+                        }
+
+                        newPlaylists.value = updatedPlaylists
+                        activeWindow.value++
+
+               });
+            }
+        });
+
+    } else {
+        showModal.value = true
+        modalMessage.value = "Please enter a valid OpenAI API Key"
+    }
 }
 
 function handleSelectPlaylist(id: string) {
@@ -124,7 +202,6 @@ async function handleSavePlaylist() {
         })
 
         if (!resp.ok) {
-            console.log("unable to create playlist")
             showModal.value = true
             modalMessage.value = "An Error occured saving your playlist"
             return;
@@ -154,6 +231,9 @@ async function handleSavePlaylist() {
         console.log(err)
     }
 }
+
+function handleOpenAIKeyChange(val: any) { openaiKey.value = val; }
+
 </script>
 
 <template>
@@ -170,7 +250,12 @@ async function handleSavePlaylist() {
             <div class="button-container">
                 <button @click="handleBackPress" class="back-button">&larr;</button>
             </div>
-            <PlaylistView :playlist="selectedPlaylist" :loading="loading" @on-split-playlist="handleSplitPlaylist"
+            <PlaylistView :playlist="selectedPlaylist" 
+                          :loading="loading" 
+                          :openAiKeyValue="openaiKey" 
+                @input-openaikey-changed="handleOpenAIKeyChange"
+                @on-split-playlist="handleSplitPlaylist"
+                @on-auto-playlist="handleAutoPlaylist"
                 @on-save-playlist="handleSavePlaylist" />
             <v-snackbar v-model="showModal" timeout="2000">{{ modalMessage }}</v-snackbar>
         </section>
