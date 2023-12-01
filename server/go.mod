@@ -1,4 +1,4 @@
-module github.com/IzuEneh/splitify/server
+module github.com/splitify
 
 go 1.20
 

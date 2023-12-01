@@ -36,6 +36,9 @@ go:
 	$(LOCAL_BUILD_GO)
 	$(RUN_SERVER)
 
+node: 
+	$(LOCAL_BUILD_NODE) --watch
+
 docker:
 	$(DOCKER_BUILD)
 	$(DOCKER_RUN)
