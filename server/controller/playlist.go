@@ -5,7 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
+	"net/http/httputil"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	m "github.com/splitify/models"
@@ -15,9 +18,9 @@ type GenerateRequest struct {
 	Tracks []m.Track `json:"tracks"`
 }
 
-func map2(data []m.Track, f func(int, m.Track) m.Track) []m.Track {
+func map2[T interface{}, V interface{}](data []V, f func(int, V) T) []T {
 
-	mapped := make([]m.Track, len(data))
+	mapped := make([]T, len(data))
 
 	for i, e := range data {
 		mapped[i] = f(i, e)
@@ -74,6 +77,110 @@ func GeneratePlaylists(c *gin.Context) {
 	}
 
 	c.IndentedJSON(http.StatusOK, gin.H{"playlists": updatedPlaylists})
+}
+
+func logReq(req *http.Request) {
+	reqDump, err := httputil.DumpRequestOut(req, true)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("REQUEST:\n%s", string(reqDump))
+}
+
+func logResp(resp *http.Response) {
+	respDump, err := httputil.DumpResponse(resp, true)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("RESPONSE:\n%s", string(respDump))
+}
+
+type AudioFeatureResponse struct {
+	AudioFeatures []m.AudioFeature `json:"audio_features"`
+}
+
+func fetchAudioFeatures(token string, url string) ([]m.AudioFeature, error) {
+	//  from track ids fetch audio features
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Authorization", token)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		return nil, fmt.Errorf("Audio Feature Get request failed with: %s", resp.Status)
+	}
+
+	defer resp.Body.Close()
+	var features struct {
+		AudioFeatures []m.AudioFeature `json:"audio_features"`
+	}
+	body, _ := io.ReadAll(resp.Body)
+	err = json.Unmarshal(body, &features)
+	if err != nil {
+		return nil, err
+	}
+
+	return features.AudioFeatures, nil
+}
+
+func GeneratePlaylists2(c *gin.Context) {
+	// get tracks from request
+	var request GenerateRequest
+	trackMap := make(map[string]m.Track)
+	if err := c.BindJSON(&request); err != nil {
+		return
+	}
+
+	accessToken := c.Request.Header["Authorization"][0]
+	if len(accessToken) == 0 {
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
+	idArr := map2(request.Tracks, func(i int, track m.Track) string {
+		trackMap[track.Track.ID] = track
+		return track.Track.ID
+	})
+
+	url := fmt.Sprintf("https://api.spotify.com/v1/audio-features?ids=%s", strings.Join(idArr, ","))
+	audioFeatures, err := fetchAudioFeatures(accessToken, url)
+	if err != nil {
+		fmt.Println(err)
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	/// Danceability, Energy, Instrumentalness, HIgh Tempo, Low Tempo, High Valence, Low Valence
+	playlists := createDanceablePlaylist(&audioFeatures, trackMap)
+
+	// for each feature find the average of the feature for the set and add tracks that are >= avg
+	c.IndentedJSON(http.StatusOK, gin.H{"playlists": playlists})
+}
+
+func createDanceablePlaylist(features *[]m.AudioFeature, trackMap map[string]m.Track) []m.Playlist {
+	updatedPlaylists := []m.Playlist{}
+	buffer := []m.Track{}
+	total := 0.0
+	for _, feature := range *features {
+		total += feature.Danceability
+	}
+	avg := total / float64(len(*features))
+
+	for _, feature := range *features {
+		if feature.Danceability >= avg {
+			buffer = append(buffer, trackMap[feature.ID])
+		}
+	}
+
+	return append(updatedPlaylists, createNewPlaylist(len(updatedPlaylists), "Dancey dance playlist", buffer))
 }
 
 type SaveRequest struct {

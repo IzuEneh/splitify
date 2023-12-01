@@ -9,7 +9,7 @@ import (
 func main() {
 	router := gin.Default()
 	router.Use(static.Serve("/", static.LocalFile("./static", false)))
-	router.POST("/generate", controller.GeneratePlaylists)
+	router.POST("/generate", controller.GeneratePlaylists2)
 	router.NoRoute(func(c *gin.Context) {
 		c.File("./static/index.html")
 	})
