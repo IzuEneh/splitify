@@ -12,6 +12,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	m "github.com/splitify/models"
+	"github.com/splitify/services"
 )
 
 type GenerateRequest struct {
@@ -134,7 +135,6 @@ func fetchAudioFeatures(token string, url string) ([]m.AudioFeature, error) {
 func GeneratePlaylists2(c *gin.Context) {
 	// get tracks from request
 	var request GenerateRequest
-	trackMap := make(map[string]m.Track)
 	if err := c.BindJSON(&request); err != nil {
 		return
 	}
@@ -146,41 +146,19 @@ func GeneratePlaylists2(c *gin.Context) {
 	}
 
 	idArr := map2(request.Tracks, func(i int, track m.Track) string {
-		trackMap[track.Track.ID] = track
 		return track.Track.ID
 	})
 
 	url := fmt.Sprintf("https://api.spotify.com/v1/audio-features?ids=%s", strings.Join(idArr, ","))
-	audioFeatures, err := fetchAudioFeatures(accessToken, url)
+	audio_features, err := fetchAudioFeatures(accessToken, url)
 	if err != nil {
 		fmt.Println(err)
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	/// Danceability, Energy, Instrumentalness, HIgh Tempo, Low Tempo, High Valence, Low Valence
-	playlists := createDanceablePlaylist(&audioFeatures, trackMap)
-
-	// for each feature find the average of the feature for the set and add tracks that are >= avg
+	playlists := services.GeneratePlaylists(request.Tracks, audio_features)
 	c.IndentedJSON(http.StatusOK, gin.H{"playlists": playlists})
-}
-
-func createDanceablePlaylist(features *[]m.AudioFeature, trackMap map[string]m.Track) []m.Playlist {
-	updatedPlaylists := []m.Playlist{}
-	buffer := []m.Track{}
-	total := 0.0
-	for _, feature := range *features {
-		total += feature.Danceability
-	}
-	avg := total / float64(len(*features))
-
-	for _, feature := range *features {
-		if feature.Danceability >= avg {
-			buffer = append(buffer, trackMap[feature.ID])
-		}
-	}
-
-	return append(updatedPlaylists, createNewPlaylist(len(updatedPlaylists), "Dancey dance playlist", buffer))
 }
 
 type SaveRequest struct {

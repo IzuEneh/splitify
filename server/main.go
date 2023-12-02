@@ -6,6 +6,9 @@ import (
 	"github.com/splitify/controller"
 )
 
+// "github.com/gin-contrib/static"
+// "github.com/gin-gonic/gin"
+
 func main() {
 	router := gin.Default()
 	router.Use(static.Serve("/", static.LocalFile("./static", false)))
