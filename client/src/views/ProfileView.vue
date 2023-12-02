@@ -50,43 +50,27 @@ async function getPlaylist(id: string) {
     }
 }
 
-function createNewPlaylist(id: number, name: string, tracks: Track[]) {
-    return ({
-        id,
-        images: [{ url: "https://source.unsplash.com/random/60×60/?music", height: 60, with: 60 }],
-        name: name,
-        description: "new playlist created by ai",
-        owner: {
-            display_name: "current user"
-        },
-        tracks: {
-            total: tracks.length,
-            items: tracks.map((item, index) => ({ ...item, id: index + 1 }))
-        }
-    })
-}
+async function handleSplitPlaylist() {
+    try {
+        const accessToken = await fetchAccessToken()
+        const result = await fetch("/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${accessToken}` },
+            body: JSON.stringify({
+                tracks: selectedPlaylist.value?.tracks.items
+            })
+        });
 
-function handleSplitPlaylist() {
-    const hour_in_ms = 1000 * 60 * 60
-    let time = 0
-    let updatedPlaylists: any[] = []
-    let buffer: Track[] = []
-    selectedPlaylist.value?.tracks.items.forEach((track) => {
-        if (time < hour_in_ms) {
-            time += track.track["duration_ms"]
-            buffer.push(track)
-        } else {
-            updatedPlaylists.push(createNewPlaylist(updatedPlaylists.length, `Playlist ${updatedPlaylists.length + 1}`, [...buffer]))
-            time = track.track["duration_ms"]
-            buffer = [track]
+        if (!result.ok) {
+            console.log("Failed to fetch playlists")
+            return;
         }
-    });
 
-    if (buffer.length != 0) {
-        updatedPlaylists.push(createNewPlaylist(updatedPlaylists.length, `Playlist ${updatedPlaylists.length + 1}`, [...buffer]))
+        const { playlists } = await result.json()
+        newPlaylists.value = playlists
+    } catch (err: any) {
+        console.log(err)
     }
-
-    newPlaylists.value = updatedPlaylists
     activeWindow.value++
 }
 
