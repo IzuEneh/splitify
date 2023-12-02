@@ -5,10 +5,10 @@ IMAGE_NAME = splitify-image
 CURRENT_DIR = $(shell pwd)
 
 # Docker build command
-DOCKER_BUILD = docker build  --build-arg "GIN_MODE=$(GIN_MODE)" --build-arg "BUILD_COMMAND=build:dev" --build-arg "CLIENT_ID=$(SPOTIFY_CLIENT_ID)" --build-arg "REDIRECT_URI=$(REDIRECT_URI)" -t $(IMAGE_NAME) .
+DOCKER_BUILD = docker build  --build-arg "PORT=$(PORT)" --build-arg "GIN_MODE=$(GIN_MODE)" --build-arg "BUILD_COMMAND=build:dev" --build-arg "CLIENT_ID=$(SPOTIFY_CLIENT_ID)" --build-arg "REDIRECT_URI=$(REDIRECT_URI)" -t $(IMAGE_NAME) .
 
 # Docker run command
-DOCKER_RUN = docker run -it --rm -p 8080:8080 $(IMAGE_NAME)
+DOCKER_RUN = docker run -it --rm -p $(PORT):$(PORT) $(IMAGE_NAME)
 
 LOCAL_BUILD_NODE = cd $(CURRENT_DIR)/client && VITE_REDIRECT_URI=$(REDIRECT_URI) VITE_CLIENT_ID=$(SPOTIFY_CLIENT_ID) npm run build:dev -- --outDir "../dev/static" --emptyOutDir 
 
@@ -26,7 +26,7 @@ local:
 	$(RUN_SERVER)
 
 clean: clean-local
-	docker rmi -f $(IMAGE_NAME) || true
+	docker rmi -f $(IMAGE_NAME) 
 
 
 clean-local:

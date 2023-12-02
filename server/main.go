@@ -1,20 +1,22 @@
 package main
 
 import (
+	"os"
+
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 	"github.com/splitify/controller"
 )
 
-// "github.com/gin-contrib/static"
-// "github.com/gin-gonic/gin"
-
 func main() {
+	port := os.Getenv("PORT")
+
 	router := gin.Default()
 	router.Use(static.Serve("/", static.LocalFile("./static", false)))
-	router.POST("/generate", controller.GeneratePlaylists2)
+	router.POST("/generate", controller.GeneratePlaylists)
 	router.NoRoute(func(c *gin.Context) {
 		c.File("./static/index.html")
 	})
-	router.Run(":8080")
+
+	router.Run(":" + port)
 }
