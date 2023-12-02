@@ -32,6 +32,9 @@ FROM scratch
 
 WORKDIR /splitify
 
+# Copy the CA certificates from the previous build stage
+COPY --from=go-build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+
 COPY --from=go-build app/server ./
 
 COPY --from=node-build src/dist ./static
