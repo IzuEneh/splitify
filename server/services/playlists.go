@@ -1,11 +1,8 @@
 package services
 
 import (
-	"encoding/json"
-	"log"
-	"os"
-
 	m "github.com/splitify/models"
+	"github.com/splitify/utils"
 )
 
 // / Danceability, Energy, Instrumentalness, High Tempo, Low Tempo, High Valence, Low Valence
@@ -75,34 +72,6 @@ func calcAvg(n int, prev float64, curr float64) float64 {
 	return (float64(n-1)*prev + curr) / float64(n)
 }
 
-func getContent[T interface{}](fileName string) *T {
-	// Let's first read the `config.json` file
-	content, err := os.ReadFile(fileName)
-	if err != nil {
-		log.Fatal("Error when opening file: ", err)
-	}
-
-	// Now let's unmarshall the data into `payload`
-	var payload T
-	err = json.Unmarshal(content, &payload)
-	if err != nil {
-		log.Fatal("Error during Unmarshal(): ", err)
-	}
-
-	return &payload
-}
-
-func map2[T interface{}, V interface{}](data []V, f func(int, V) T) []T {
-
-	mapped := make([]T, len(data))
-
-	for i, e := range data {
-		mapped[i] = f(i, e)
-	}
-
-	return mapped
-}
-
 func createNewPlaylist(id int, name string, tracks []m.Track) m.Playlist {
 	return m.Playlist{
 		ID:          id,
@@ -115,7 +84,7 @@ func createNewPlaylist(id int, name string, tracks []m.Track) m.Playlist {
 		Tracks: struct {
 			Total int       "json:\"total\""
 			Items []m.Track "json:\"items\""
-		}{len(tracks), map2(tracks, func(i int, t m.Track) m.Track {
+		}{len(tracks), utils.Map(tracks, func(i int, t m.Track) m.Track {
 			t.ID = i + 1
 			return t
 		})}, //len(tracks), tracks
